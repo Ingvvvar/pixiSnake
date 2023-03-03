@@ -9,49 +9,51 @@ const app = new Application({
 document.body.appendChild(app.view);
 // app.stage.sortableChildren = true;
 
-const config = {
-  step: 0,
-  maxStep: 6,
-  sizeCell: 16,
-  sizeFood: 16 / 2,
-}
+const CELL_SIZE = 16;
+const FOOD_SIZE = CELL_SIZE / 2;
 
 const snake = {
   x: app.screen.width / 2,
   y: app.screen.height / 2,
-  dx: config.sizeCell,
+  dx: CELL_SIZE,
   dy: 0,
   tails: [],
   maxTails: 3,
   gameOver: false
 }
 
-const getRandom = (min, max) => Math.floor(Math.random() * (max - min) + min) * config.sizeCell;
+const getRandomPosition = (min, max) => Math.floor(Math.random() * (max - min) + min) * CELL_SIZE;
 
 const food = {
-  x: getRandom(0, app.screen.width / config.sizeCell),
-  y: getRandom(0, app.screen.height / config.sizeCell)
+  x: getRandomPosition(0, app.screen.width / CELL_SIZE),
+  y: getRandomPosition(0, app.screen.height / CELL_SIZE)
 }
 
 const randomPositionFood = () => {
-  food.x = getRandom(0, app.screen.width / config.sizeCell),
-  food.y = getRandom(0, app.screen.height / config.sizeCell)
+  food.x = getRandomPosition(0, app.screen.width / CELL_SIZE),
+    food.y = getRandomPosition(0, app.screen.height / CELL_SIZE)
 }
 
 const drawFood = () => {
-  const elem = new Graphics();
-  elem.beginFill(0xda01a1, 1);
-  elem.drawCircle(food.x, food.y, config.sizeFood);
-  elem.endFill();
-  elem.position.set(8, 8);
-  app.stage.addChild(elem);
+  const graphics = new Graphics();
+  graphics.beginFill(0xda01a1, 1);
+  graphics.drawCircle(0, 0, FOOD_SIZE);
+  graphics.endFill();
+  graphics.position.set(food.x + FOOD_SIZE, food.y + FOOD_SIZE);
+  app.stage.addChild(graphics);
 }
 
 const drawSnake = () => {
   snake.x += snake.dx;
   snake.y += snake.dy;
 
-  outOfBounds();
+  handleOutOfBounds();
+
+  const headX = snake.x + CELL_SIZE / 2;
+  const headY = snake.y + CELL_SIZE / 2;
+  const foodX = food.x + CELL_SIZE / 2;
+  const foodY = food.y + CELL_SIZE / 2;
+  const distance = Math.sqrt((headX - foodX) ** 2 + (headY - foodY) ** 2);
 
   snake.tails.unshift({ x: snake.x, y: snake.y });
 
@@ -59,21 +61,16 @@ const drawSnake = () => {
     snake.tails.pop();
   }
 
-  const drawRect = (color, x, y, z = 0) => {
-    const elem = new Graphics();
-    elem.beginFill(color, 1);
-    elem.drawRect(x, y, config.sizeCell, config.sizeCell);
-    elem.endFill();
-    elem.zIndex = z;
-    app.stage.addChild(elem);
-  }
-
   snake.tails.forEach((el, idx) => {
-    if (idx === 0) {
-      drawRect(0x00ff00, el.x, el.y, 1);
-    } else {
-      drawRect(0x000000, el.x, el.y);
-    }
+    const color = idx === 0 ? (distance <= CELL_SIZE * 2 ? 0xff0000 : 0x00ff00) : 0x000000;
+    const zIndex = idx === 0 ? 1 : 0;
+    const graphics = new Graphics();
+    graphics.beginFill(color, 1);
+    graphics.drawRect(el.x, el.y, CELL_SIZE, CELL_SIZE);
+    graphics.endFill();
+    graphics.zIndex = zIndex;
+    app.stage.addChild(graphics);
+
     if (el.x === food.x && el.y === food.y) {
       snake.maxTails++;
       randomPositionFood();
@@ -86,18 +83,18 @@ const drawSnake = () => {
   })
 }
 
-function outOfBounds() {
-  if (snake.x > app.screen.width - config.sizeCell) {
+function handleOutOfBounds() {
+  if (snake.x > app.screen.width - CELL_SIZE) {
     snake.x = 0;
   }
   if (snake.x < 0) {
-    snake.x = app.screen.width - config.sizeCell;
+    snake.x = app.screen.width - CELL_SIZE;
   }
-  if (snake.y > app.screen.height - config.sizeCell) {
+  if (snake.y > app.screen.height - CELL_SIZE) {
     snake.y = 0;
   }
   if (snake.y < 0) {
-    snake.y = app.screen.height - config.sizeCell;
+    snake.y = app.screen.height - CELL_SIZE;
   }
 }
 
@@ -108,31 +105,37 @@ function gameOver() {
 document.addEventListener("keydown", (e) => {
   if (e.code === "ArrowUp") {
     snake.dx = 0;
-    snake.dy = -config.sizeCell;
+    snake.dy = -CELL_SIZE;
   }
   if (e.code === "ArrowDown") {
     snake.dx = 0;
-    snake.dy = config.sizeCell;
+    snake.dy = CELL_SIZE;
   }
   if (e.code === "ArrowLeft") {
-    snake.dx = -config.sizeCell;
+    snake.dx = -CELL_SIZE;
     snake.dy = 0;
   }
   if (e.code === "ArrowRight") {
-    snake.dx = config.sizeCell;
+    snake.dx = CELL_SIZE;
     snake.dy = 0;
   }
 })
 
+const updateInterval = 200;
+let lastUpdateTime = Date.now();
+
 app.ticker.add(() => {
-  if (++config.step < config.maxStep) {
-    return;
-  }
-  if (!snake.gameOver) {
-    config.step = 0;
-    app.stage.removeChildren();
-    drawFood();
-    drawSnake();
-    app.stage.sortChildren();
+
+  const now = Date.now();
+  const deltaTime = now - lastUpdateTime;
+
+  if (deltaTime > updateInterval) {
+    if (!snake.gameOver) {
+      app.stage.removeChildren();
+      drawFood();
+      drawSnake();
+      app.stage.sortChildren();
+    }
+    lastUpdateTime = now - (deltaTime % updateInterval);
   }
 });
