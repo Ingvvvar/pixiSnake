@@ -1,4 +1,5 @@
-import { Application, Graphics } from './pixi.mjs';
+import { Application, Graphics } from "pixi.js";
+import * as PIXI from "pixi.js";
 
 const app = new Application({
   height: 640,
