@@ -1,4 +1,5 @@
 const path = require('path');
+const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
@@ -8,6 +9,9 @@ module.exports = {
     new HtmlWebpackPlugin({
       title: 'pixiSnake',
     }),
+    new CopyPlugin({
+      patterns: [{ from: 'src/assets' }],
+  }),
   ],
   devtool: 'inline-source-map',
   devServer: {

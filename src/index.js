@@ -1,8 +1,8 @@
-import { Application, Graphics } from "pixi.js";
-import * as PIXI from "pixi.js";
+import { Application, Container, Graphics, Texture, TilingSprite, Sprite } from "pixi.js";
 
 const app = new Application({
   height: 640,
+  width: 640,
   backgroundColor: 0x2f90a8,
   antialias: true
 });
@@ -10,8 +10,18 @@ const app = new Application({
 document.body.appendChild(app.view);
 // app.stage.sortableChildren = true;
 
-const CELL_SIZE = 16;
+const CELL_SIZE = 64;
 const FOOD_SIZE = CELL_SIZE / 2;
+
+const grassTexture = Texture.from("grass_64.png");
+const grassSprite = new TilingSprite(
+  grassTexture,
+  app.screen.width,
+  app.screen.height
+)
+app.stage.addChild(grassSprite);
+
+console.log(app.stage)
 
 const snake = {
   x: app.screen.width / 2,
@@ -34,19 +44,22 @@ const randomPositionFood = () => {
   food.x = getRandomPosition(0, app.screen.width / CELL_SIZE),
     food.y = getRandomPosition(0, app.screen.height / CELL_SIZE)
 }
-
+const foodContainer = new Container();
 const drawFood = () => {
-  const graphics = new Graphics();
-  graphics.beginFill(0xda01a1, 1);
-  graphics.drawCircle(0, 0, FOOD_SIZE);
-  graphics.endFill();
-  graphics.position.set(food.x + FOOD_SIZE, food.y + FOOD_SIZE);
-  app.stage.addChild(graphics);
+  const apple = Sprite.from('apple.png');
+  apple.anchor.set(0.5, 0.5)
+  apple.position.set(food.x + FOOD_SIZE, food.y + FOOD_SIZE);
+  foodContainer.addChild(apple)
+  app.stage.addChild(foodContainer);
 }
+drawFood();
+
+const snakeContainer = new Container();
 
 const drawSnake = () => {
   snake.x += snake.dx;
   snake.y += snake.dy;
+
 
   handleOutOfBounds();
 
@@ -70,11 +83,14 @@ const drawSnake = () => {
     graphics.drawRect(el.x, el.y, CELL_SIZE, CELL_SIZE);
     graphics.endFill();
     graphics.zIndex = zIndex;
-    app.stage.addChild(graphics);
+    snakeContainer.addChild(graphics);
+    app.stage.addChild(snakeContainer);
 
     if (el.x === food.x && el.y === food.y) {
       snake.maxTails++;
+      foodContainer.removeChildren();
       randomPositionFood();
+      drawFood();
     }
     for (let i = idx + 1; i < snake.tails.length; i++) {
       if (el.x === snake.tails[i].x && el.y === snake.tails[i].y) {
@@ -132,10 +148,9 @@ app.ticker.add(() => {
 
   if (deltaTime > updateInterval) {
     if (!snake.gameOver) {
-      app.stage.removeChildren();
-      drawFood();
+      snakeContainer.removeChildren();
       drawSnake();
-      app.stage.sortChildren();
+      snakeContainer.sortChildren();
     }
     lastUpdateTime = now - (deltaTime % updateInterval);
   }
