@@ -1,11 +1,23 @@
 import { Application, Container, Texture, TilingSprite, Sprite } from "pixi.js";
 
+const scoreContainer = document.getElementById('score-container');
+let score = 0;
+
+function incScore() {
+  score++;
+  drawScore();
+}
+
+function drawScore() {
+  scoreContainer.innerHTML = `Score: ${score}`;
+}
+
 const app = new Application({
   height: 640,
-  width: 640,
+  width: 960,
   antialias: true
 });
-
+drawScore()
 document.body.appendChild(app.view);
 
 const CELL_SIZE = 64;
@@ -121,6 +133,7 @@ const drawSnake = () => {
 
     if (el.x === food.x && el.y === food.y) {
       snake.maxTails++;
+      incScore();
       foodContainer.removeChildren();
       randomPositionFood();
       drawFood();

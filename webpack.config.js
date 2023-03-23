@@ -8,10 +8,11 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       title: 'pixiSnake',
+      template: path.resolve(__dirname, 'src', 'index.html')
     }),
     new CopyPlugin({
       patterns: [{ from: 'src/assets' }],
-  }),
+    }),
   ],
   devtool: 'inline-source-map',
   devServer: {
