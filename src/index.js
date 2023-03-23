@@ -1,14 +1,12 @@
-import { Application, Container, Graphics, Texture, TilingSprite, Sprite } from "pixi.js";
+import { Application, Container, Texture, TilingSprite, Sprite } from "pixi.js";
 
 const app = new Application({
   height: 640,
   width: 640,
-  backgroundColor: 0x2f90a8,
   antialias: true
 });
 
 document.body.appendChild(app.view);
-// app.stage.sortableChildren = true;
 
 const CELL_SIZE = 64;
 const FOOD_SIZE = CELL_SIZE / 2;
@@ -20,8 +18,6 @@ const grassSprite = new TilingSprite(
   app.screen.height
 )
 app.stage.addChild(grassSprite);
-
-console.log(app.stage)
 
 const snake = {
   x: app.screen.width / 2,
@@ -55,19 +51,36 @@ const drawFood = () => {
 drawFood();
 
 const snakeContainer = new Container();
+snakeContainer.sortableChildren = true;
+
+const getDirection = (current, previous) => {
+  if (!current || !previous) return null;
+
+  let dx = current.x - previous.x;
+  let dy = current.y - previous.y;
+
+  if (Math.abs(dx) > CELL_SIZE) {
+    dx = dx > 0 ? -CELL_SIZE : CELL_SIZE;
+  }
+  if (Math.abs(dy) > CELL_SIZE) {
+    dy = dy > 0 ? -CELL_SIZE : CELL_SIZE;
+  }
+
+  if (dx < 0) return 'left';
+  if (dx > 0) return 'right';
+  if (dy < 0) return 'up';
+  if (dy > 0) return 'down';
+};
+
+const getSprite = (type, direction) => {
+  return Sprite.from(`${type}_${direction}.png`);
+};
 
 const drawSnake = () => {
   snake.x += snake.dx;
   snake.y += snake.dy;
 
-
   handleOutOfBounds();
-
-  const headX = snake.x + CELL_SIZE / 2;
-  const headY = snake.y + CELL_SIZE / 2;
-  const foodX = food.x + CELL_SIZE / 2;
-  const foodY = food.y + CELL_SIZE / 2;
-  const distance = Math.sqrt((headX - foodX) ** 2 + (headY - foodY) ** 2);
 
   snake.tails.unshift({ x: snake.x, y: snake.y });
 
@@ -76,14 +89,34 @@ const drawSnake = () => {
   }
 
   snake.tails.forEach((el, idx) => {
-    const color = idx === 0 ? (distance <= CELL_SIZE * 2 ? 0xff0000 : 0x00ff00) : 0x000000;
-    const zIndex = idx === 0 ? 1 : 0;
-    const graphics = new Graphics();
-    graphics.beginFill(color, 1);
-    graphics.drawRect(el.x, el.y, CELL_SIZE, CELL_SIZE);
-    graphics.endFill();
-    graphics.zIndex = zIndex;
-    snakeContainer.addChild(graphics);
+    let segmentSprite;
+    const previous = idx === 0 ? null : snake.tails[idx - 1];
+    const next = idx === snake.tails.length - 1 ? null : snake.tails[idx + 1];
+
+    if (idx === 0) { // Head
+      const direction = getDirection(el, next);
+      segmentSprite = getSprite('snake_head', direction);
+      segmentSprite.zIndex = 1;
+    } else if (idx === snake.tails.length - 1) { // Tail
+      const direction = getDirection(previous, el);
+      segmentSprite = getSprite('snake_tail', direction);
+    } else { // Body
+      const prevDirection = getDirection(el, next);
+      const nextDirection = getDirection(previous, el);
+
+      if (prevDirection !== nextDirection) {
+        segmentSprite = getSprite('snake_body_bend', prevDirection + '_' + nextDirection);
+      } else {
+        segmentSprite = getSprite('snake_body', prevDirection);
+      }
+    }
+
+    segmentSprite.anchor.set(0.5, 0.5);
+    segmentSprite.position.set(el.x + CELL_SIZE / 2, el.y + CELL_SIZE / 2);
+    segmentSprite.width = CELL_SIZE;
+    segmentSprite.height = CELL_SIZE;
+
+    snakeContainer.addChild(segmentSprite);
     app.stage.addChild(snakeContainer);
 
     if (el.x === food.x && el.y === food.y) {
@@ -97,8 +130,8 @@ const drawSnake = () => {
         gameOver();
       }
     }
-  })
-}
+  });
+};
 
 function handleOutOfBounds() {
   if (snake.x > app.screen.width - CELL_SIZE) {
@@ -120,19 +153,19 @@ function gameOver() {
 }
 
 document.addEventListener("keydown", (e) => {
-  if (e.code === "ArrowUp") {
+  if (e.code === "ArrowUp" && snake.dy !== CELL_SIZE) {
     snake.dx = 0;
     snake.dy = -CELL_SIZE;
   }
-  if (e.code === "ArrowDown") {
+  if (e.code === "ArrowDown" && snake.dy !== -CELL_SIZE) {
     snake.dx = 0;
     snake.dy = CELL_SIZE;
   }
-  if (e.code === "ArrowLeft") {
+  if (e.code === "ArrowLeft" && snake.dx !== CELL_SIZE) {
     snake.dx = -CELL_SIZE;
     snake.dy = 0;
   }
-  if (e.code === "ArrowRight") {
+  if (e.code === "ArrowRight" && snake.dx !== -CELL_SIZE) {
     snake.dx = CELL_SIZE;
     snake.dy = 0;
   }
@@ -150,7 +183,6 @@ app.ticker.add(() => {
     if (!snake.gameOver) {
       snakeContainer.removeChildren();
       drawSnake();
-      snakeContainer.sortChildren();
     }
     lastUpdateTime = now - (deltaTime % updateInterval);
   }
