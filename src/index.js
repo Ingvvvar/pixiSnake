@@ -1,4 +1,11 @@
 import { Application, Container, Texture, TilingSprite, Sprite } from "pixi.js";
+import appConstants from './constants';
+import { loadAssets } from './textureLoader';
+
+const WIDTH = appConstants.size.WIDTH;
+const HEIGHT = appConstants.size.HEIGHT;
+const CELL_SIZE = appConstants.size.CELL_SIZE;
+const FOOD_SIZE = appConstants.size.CELL_SIZE / 2;
 
 const scoreContainer = document.getElementById('score-container');
 let score = 0;
@@ -13,23 +20,11 @@ function drawScore() {
 }
 
 const app = new Application({
-  height: 640,
-  width: 960,
+  height: HEIGHT,
+  width: WIDTH,
   antialias: true
 });
 drawScore()
-document.body.appendChild(app.view);
-
-const CELL_SIZE = 64;
-const FOOD_SIZE = CELL_SIZE / 2;
-
-const grassTexture = Texture.from("grass_64.png");
-const grassSprite = new TilingSprite(
-  grassTexture,
-  app.screen.width,
-  app.screen.height
-)
-app.stage.addChild(grassSprite);
 
 const snake = {
   x: app.screen.width / 2,
@@ -54,13 +49,13 @@ const randomPositionFood = () => {
 }
 const foodContainer = new Container();
 const drawFood = () => {
-  const apple = Sprite.from('apple.png');
+  const apple = Sprite.from('apple');
   apple.anchor.set(0.5, 0.5)
   apple.position.set(food.x + FOOD_SIZE, food.y + FOOD_SIZE);
   foodContainer.addChild(apple)
   app.stage.addChild(foodContainer);
 }
-drawFood();
+// drawFood();
 
 const snakeContainer = new Container();
 snakeContainer.sortableChildren = true;
@@ -187,16 +182,30 @@ document.addEventListener("keydown", (e) => {
 const updateInterval = 200;
 let lastUpdateTime = Date.now();
 
-app.ticker.add(() => {
+loadAssets((progress) => {
+  if (progress === 'all') {
+    document.body.appendChild(app.view);
 
-  const now = Date.now();
-  const deltaTime = now - lastUpdateTime;
+    const grassTexture = Texture.from("grass_64.png");
+    const grassSprite = new TilingSprite(
+      grassTexture,
+      app.screen.width,
+      app.screen.height
+    )
+    app.stage.addChild(grassSprite);
+    drawFood();
 
-  if (deltaTime > updateInterval) {
-    if (!snake.gameOver) {
-      snakeContainer.removeChildren();
-      drawSnake();
-    }
-    lastUpdateTime = now - (deltaTime % updateInterval);
+    app.ticker.add(() => {
+      const now = Date.now();
+      const deltaTime = now - lastUpdateTime;
+
+      if (deltaTime > updateInterval) {
+        if (!snake.gameOver) {
+          snakeContainer.removeChildren();
+          drawSnake();
+        }
+        lastUpdateTime = now - (deltaTime % updateInterval);
+      }
+    });
   }
-});
+})
