@@ -1,6 +1,7 @@
 import { Application, Container, Texture, TilingSprite, Sprite } from "pixi.js";
 import appConstants from './constants';
 import { loadAssets } from './textureLoader';
+import StartScreen from './startScreen';
 
 const WIDTH = appConstants.size.WIDTH;
 const HEIGHT = appConstants.size.HEIGHT;
@@ -24,6 +25,7 @@ const app = new Application({
   width: WIDTH,
   antialias: true
 });
+globalThis.__PIXI_APP__ = app;
 drawScore()
 
 const snake = {
@@ -55,7 +57,6 @@ const drawFood = () => {
   foodContainer.addChild(apple)
   app.stage.addChild(foodContainer);
 }
-// drawFood();
 
 const snakeContainer = new Container();
 snakeContainer.sortableChildren = true;
@@ -80,7 +81,7 @@ const getDirection = (current, previous) => {
 };
 
 const getSprite = (type, direction) => {
-  return Sprite.from(`${type}_${direction}.png`);
+  return Sprite.from(`${type}_${direction}`);
 };
 
 const drawSnake = () => {
@@ -101,7 +102,7 @@ const drawSnake = () => {
     const next = idx === snake.tails.length - 1 ? null : snake.tails[idx + 1];
 
     if (idx === 0) { // Head
-      const direction = getDirection(el, next);
+      const direction = getDirection(el, next) || 'right'; // Default to 'right' when direction is null
       segmentSprite = getSprite('snake_head', direction);
       segmentSprite.zIndex = 1;
     } else if (idx === snake.tails.length - 1) { // Tail
@@ -184,28 +185,34 @@ let lastUpdateTime = Date.now();
 
 loadAssets((progress) => {
   if (progress === 'all') {
-    document.body.appendChild(app.view);
 
-    const grassTexture = Texture.from("grass_64.png");
-    const grassSprite = new TilingSprite(
-      grassTexture,
-      app.screen.width,
-      app.screen.height
-    )
-    app.stage.addChild(grassSprite);
-    drawFood();
+    const startScreen = new StartScreen(app);
+    app.stage.addChild(startScreen);
 
-    app.ticker.add(() => {
-      const now = Date.now();
-      const deltaTime = now - lastUpdateTime;
+    startScreen.on("startGame", () => {
+      app.stage.removeChild(startScreen);
+      const grassTexture = Texture.from("grass_64");
+      const grassSprite = new TilingSprite(
+        grassTexture,
+        app.screen.width,
+        app.screen.height
+      )
+      app.stage.addChild(grassSprite);
+      drawFood();
 
-      if (deltaTime > updateInterval) {
-        if (!snake.gameOver) {
-          snakeContainer.removeChildren();
-          drawSnake();
+      app.ticker.add(() => {
+        const now = Date.now();
+        const deltaTime = now - lastUpdateTime;
+
+        if (deltaTime > updateInterval) {
+          if (!snake.gameOver) {
+            snakeContainer.removeChildren();
+            drawSnake();
+          }
+          lastUpdateTime = now - (deltaTime % updateInterval);
         }
-        lastUpdateTime = now - (deltaTime % updateInterval);
-      }
+      });
     });
+    document.body.appendChild(app.view);
   }
 })
