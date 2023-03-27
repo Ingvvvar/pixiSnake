@@ -23,6 +23,7 @@ export const allTextureKeys = {
   snake_tail_right: "snake_tail_right",
   snake_tail_up: "snake_tail_up",
   start_screen_bg: "start_screen_bg",
+  end_screen_bg: "end_screen_bg",
 };
 
 const appTextures = {
@@ -50,6 +51,7 @@ const appTextures = {
   [allTextureKeys.snake_tail_right]: 'snake_tail_right.png',
   [allTextureKeys.snake_tail_up]: 'snake_tail_up.png',
   [allTextureKeys.start_screen_bg]: 'start_screen_bg.png',
+  [allTextureKeys.end_screen_bg]: 'end_screen_bg.png',
 };
 
 export default appTextures;

@@ -2,6 +2,7 @@ import { Application, Container, Texture, TilingSprite, Sprite } from "pixi.js";
 import appConstants from './constants';
 import { loadAssets } from './textureLoader';
 import StartScreen from './startScreen';
+import GameOverScreen from './gameOverScreen';
 
 const WIDTH = appConstants.size.WIDTH;
 const HEIGHT = appConstants.size.HEIGHT;
@@ -81,10 +82,16 @@ const getDirection = (current, previous) => {
 };
 
 const getSprite = (type, direction) => {
+  if (!direction) {
+    return null;
+  }
   return Sprite.from(`${type}_${direction}`);
 };
 
 const drawSnake = () => {
+
+  if (snake.gameOver) return;
+
   snake.x += snake.dx;
   snake.y += snake.dy;
 
@@ -100,9 +107,9 @@ const drawSnake = () => {
     let segmentSprite;
     const previous = idx === 0 ? null : snake.tails[idx - 1];
     const next = idx === snake.tails.length - 1 ? null : snake.tails[idx + 1];
-
+  
     if (idx === 0) { // Head
-      const direction = getDirection(el, next) || 'right'; // Default to 'right' when direction is null
+      const direction = getDirection(el, next) || 'right';
       segmentSprite = getSprite('snake_head', direction);
       segmentSprite.zIndex = 1;
     } else if (idx === snake.tails.length - 1) { // Tail
@@ -111,21 +118,23 @@ const drawSnake = () => {
     } else { // Body
       const prevDirection = getDirection(el, next);
       const nextDirection = getDirection(previous, el);
-
+  
       if (prevDirection !== nextDirection) {
         segmentSprite = getSprite('snake_body_bend', prevDirection + '_' + nextDirection);
       } else {
         segmentSprite = getSprite('snake_body', prevDirection);
       }
     }
-
-    segmentSprite.anchor.set(0.5, 0.5);
-    segmentSprite.position.set(el.x + CELL_SIZE / 2, el.y + CELL_SIZE / 2);
-    segmentSprite.width = CELL_SIZE;
-    segmentSprite.height = CELL_SIZE;
-
-    snakeContainer.addChild(segmentSprite);
-    app.stage.addChild(snakeContainer);
+  
+    if (segmentSprite) {
+      segmentSprite.anchor.set(0.5, 0.5);
+      segmentSprite.position.set(el.x + CELL_SIZE / 2, el.y + CELL_SIZE / 2);
+      segmentSprite.width = CELL_SIZE;
+      segmentSprite.height = CELL_SIZE;
+  
+      snakeContainer.addChild(segmentSprite);
+      app.stage.addChild(snakeContainer);
+    }
 
     if (el.x === food.x && el.y === food.y) {
       snake.maxTails++;
@@ -157,8 +166,45 @@ function handleOutOfBounds() {
   }
 }
 
+let gameOverTimeout;
+
 function gameOver() {
   snake.gameOver = true;
+
+  gameOverTimeout = setTimeout(() => {
+    snakeContainer.removeChildren();
+    snake.tails = [];
+
+    const gameOverScreen = new GameOverScreen(app, score);
+    app.stage.addChild(gameOverScreen);
+
+    gameOverScreen.on("restartGame", () => {
+      app.stage.removeChild(gameOverScreen);
+      restartGame();
+    });
+  }, 3000);
+}
+
+function restartGame() {
+  clearTimeout(gameOverTimeout);
+
+  score = 0;
+  drawScore();
+
+  snake.x = app.screen.width / 2;
+  snake.y = app.screen.height / 2;
+  snake.dx = CELL_SIZE;
+  snake.dy = 0;
+  snake.tails = [];
+  snake.maxTails = 3;
+  snake.gameOver = false;
+
+  foodContainer.removeChildren();
+  randomPositionFood();
+  drawFood();
+
+  app.stage.addChild(snakeContainer);
+  snakeContainer.removeChildren();
 }
 
 document.addEventListener("keydown", (e) => {
