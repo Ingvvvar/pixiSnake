@@ -1,10 +1,11 @@
 import { Container, Sprite, Texture } from "pixi.js";
 
 export default class StartScreen extends Container {
-  constructor(app) {
+  constructor(app, soundManager) {
     super();
 
     this.app = app;
+    this.soundManager = soundManager;
 
     this.background = new Sprite(Texture.from('start_screen_bg'));
     this.playButton = new Sprite(Texture.from('play_button'));

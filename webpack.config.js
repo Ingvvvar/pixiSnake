@@ -11,7 +11,10 @@ module.exports = {
       template: path.resolve(__dirname, 'src', 'index.html')
     }),
     new CopyPlugin({
-      patterns: [{ from: 'src/assets' }],
+      patterns: [
+        { from: 'src/assets' },
+        { from: 'src/sounds' }
+      ],
     }),
   ],
   devtool: 'inline-source-map',

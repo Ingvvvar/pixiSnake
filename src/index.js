@@ -1,6 +1,7 @@
 import { Application, Container, Texture, TilingSprite, Sprite } from "pixi.js";
 import appConstants from './constants';
 import { loadAssets } from './textureLoader';
+import SoundManager from './SoundManager';
 import StartScreen from './startScreen';
 import GameOverScreen from './gameOverScreen';
 
@@ -8,6 +9,7 @@ const WIDTH = appConstants.size.WIDTH;
 const HEIGHT = appConstants.size.HEIGHT;
 const CELL_SIZE = appConstants.size.CELL_SIZE;
 const FOOD_SIZE = appConstants.size.CELL_SIZE / 2;
+const soundManager = new SoundManager();
 
 const scoreContainer = document.getElementById('score-container');
 let score = 0;
@@ -139,6 +141,7 @@ const drawSnake = () => {
     if (el.x === food.x && el.y === food.y) {
       snake.maxTails++;
       incScore();
+      soundManager.playEatSound();
       foodContainer.removeChildren();
       randomPositionFood();
       drawFood();
@@ -170,6 +173,8 @@ let gameOverTimeout;
 
 function gameOver() {
   snake.gameOver = true;
+  soundManager.playDieSound();
+  soundManager.stopBackgroundMusic();
 
   gameOverTimeout = setTimeout(() => {
     snakeContainer.removeChildren();
@@ -202,6 +207,7 @@ function restartGame() {
   foodContainer.removeChildren();
   randomPositionFood();
   drawFood();
+  soundManager.playBackgroundMusic();
 
   app.stage.addChild(snakeContainer);
   snakeContainer.removeChildren();
@@ -230,13 +236,15 @@ const updateInterval = 200;
 let lastUpdateTime = Date.now();
 
 loadAssets((progress) => {
+  console.log(progress)
   if (progress === 'all') {
 
-    const startScreen = new StartScreen(app);
+    const startScreen = new StartScreen(app, soundManager);
     app.stage.addChild(startScreen);
 
     startScreen.on("startGame", () => {
       app.stage.removeChild(startScreen);
+      soundManager.playBackgroundMusic();
       const grassTexture = Texture.from("grass_64");
       const grassSprite = new TilingSprite(
         grassTexture,
