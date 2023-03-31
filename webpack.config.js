@@ -12,8 +12,8 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { from: 'src/assets' },
-        { from: 'src/sounds' }
+        { from: 'public/assets', to: 'assets' },
+        { from: 'public/sounds', to: 'sounds' }
       ],
     }),
   ],
@@ -36,14 +36,14 @@ module.exports = {
         test: /\.css$/i,
         use: ['style-loader', 'css-loader'],
       },
-     {
-       test: /\.(png|svg|jpg|jpeg|gif)$/i,
-       type: 'asset/resource',
-     },
-     {
-      test: /\.(woff|woff2|eot|ttf|otf)$/i,
-      type: 'asset/resource',
-    },
+      {
+        test: /\.(png|svg|jpg|jpeg|gif)$/i,
+        type: 'asset/resource',
+      },
+      {
+        test: /\.(woff|woff2|eot|ttf|otf)$/i,
+        type: 'asset/resource',
+      },
     ],
   },
 };
