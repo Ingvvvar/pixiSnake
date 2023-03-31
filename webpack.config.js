@@ -2,34 +2,33 @@ const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 module.exports = {
-  mode: 'development',
+  mode: isProduction ? 'production' : 'development',
   entry: './src/index.js',
   plugins: [
     new HtmlWebpackPlugin({
       title: 'pixiSnake',
-      template: path.resolve(__dirname, 'src', 'index.html')
+      template: path.resolve(__dirname, 'src', 'index.html'),
     }),
     new CopyPlugin({
       patterns: [
         { from: 'public/assets', to: 'assets' },
-        { from: 'public/sounds', to: 'sounds' }
+        { from: 'public/sounds', to: 'sounds' },
       ],
     }),
   ],
-  devtool: 'inline-source-map',
+  devtool: isProduction ? 'source-map' : 'inline-source-map',
   devServer: {
     static: './dist',
   },
   output: {
     filename: 'main.js',
     path: path.resolve(__dirname, 'dist'),
-    publicPath: process.env.PUBLIC_URL || '',
+    publicPath: isProduction ? './' : '',
     clean: true,
   },
-  // optimization: {
-  //   runtimeChunk: 'single',
-  // },
   module: {
     rules: [
       {
