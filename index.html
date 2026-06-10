@@ -1,1 +1,51 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>pixiSnake</title><script defer="defer" src="./main.js"></script></head><body><div id="score-container"></div></body></html>
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>pixiSnake</title><meta name="description" content="pixiSnake — a classic snake game built with Pixi.js. Eat apples, dodge your own tail, play with arrows or swipes."><meta name="theme-color" content="#101510"><meta property="og:type" content="website"><meta property="og:title" content="pixiSnake"><meta property="og:description" content="A classic snake game built with Pixi.js. Eat apples, dodge your own tail, play with arrows or swipes."><meta property="og:url" content="https://ingvvvar.github.io/pixiSnake/"><meta property="og:image" content="https://ingvvvar.github.io/pixiSnake/assets/og_image.jpg"><meta property="og:image:width" content="960"><meta property="og:image:height" content="640"><link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png"><link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png"><style>html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #101510;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #game-container {
+        position: relative;
+      }
+      #game-container canvas {
+        display: block;
+        touch-action: none; /* иначе браузер перехватит свайпы под скролл/зум */
+      }
+      #score-container {
+        position: absolute;
+        top: 8px;
+        left: 12px;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: clamp(16px, 4vmin, 28px);
+        font-weight: bold;
+        color: #ffffff;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        pointer-events: none;
+        z-index: 1;
+      }
+      #rotate-hint {
+        display: none;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 12px;
+        text-align: center;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 14px;
+        color: #ffffff;
+        opacity: 0.75;
+        pointer-events: none;
+        z-index: 2;
+      }
+      @media (orientation: portrait) and (max-width: 600px) {
+        #rotate-hint {
+          display: block;
+        }
+      }</style><script defer="defer" src="./main.3364dbf7.js"></script></head><body><div id="game-container"><div id="score-container"></div></div><div id="rotate-hint">Rotate your device for a bigger field</div></body></html>
