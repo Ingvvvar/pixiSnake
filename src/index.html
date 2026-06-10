@@ -4,8 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= htmlWebpackPlugin.options.title %></title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #101510;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #game-container {
+        position: relative;
+      }
+      #game-container canvas {
+        display: block;
+        touch-action: none; /* иначе браузер перехватит свайпы под скролл/зум */
+      }
+      #score-container {
+        position: absolute;
+        top: 8px;
+        left: 12px;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: clamp(16px, 4vmin, 28px);
+        font-weight: bold;
+        color: #ffffff;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        pointer-events: none;
+        z-index: 1;
+      }
+      #rotate-hint {
+        display: none;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 12px;
+        text-align: center;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 14px;
+        color: #ffffff;
+        opacity: 0.75;
+        pointer-events: none;
+        z-index: 2;
+      }
+      @media (orientation: portrait) and (max-width: 600px) {
+        #rotate-hint {
+          display: block;
+        }
+      }
+    </style>
 </head>
 <body>
-    <div id="score-container"></div>
+    <div id="game-container">
+        <div id="score-container"></div>
+    </div>
+    <div id="rotate-hint">Rotate your device for a bigger field</div>
 </body>
 </html>

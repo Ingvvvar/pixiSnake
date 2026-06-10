@@ -314,9 +314,42 @@ function restartGame() {
 document.addEventListener("keydown", (e) => {
   const direction = KEY_TO_DIRECTION[e.code];
   if (direction) {
+    e.preventDefault(); // стрелки не должны скроллить страницу
     queueDirection(direction);
   }
 })
+
+// Свайп: доминирующая ось вектора pointerdown→pointerup задаёт направление.
+// Движения короче порога — это тапы (кнопки Play обрабатывает сам Pixi)
+const SWIPE_THRESHOLD_PX = 24;
+let swipeStart = null;
+
+app.view.addEventListener('pointerdown', (e) => {
+  swipeStart = { x: e.clientX, y: e.clientY };
+});
+
+app.view.addEventListener('pointerup', (e) => {
+  if (!swipeStart) return;
+  const dx = e.clientX - swipeStart.x;
+  const dy = e.clientY - swipeStart.y;
+  swipeStart = null;
+
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_THRESHOLD_PX) return;
+
+  const direction = Math.abs(dx) > Math.abs(dy)
+    ? (dx > 0 ? 'right' : 'left')
+    : (dy > 0 ? 'down' : 'up');
+  queueDirection(direction);
+});
+
+// Внутреннее разрешение рендера фиксированное (вся сеточная логика в координатах
+// поля) — под окно подгоняется только CSS-размер canvas, с сохранением пропорций
+const fitCanvas = () => {
+  const scale = Math.min(window.innerWidth / WIDTH, window.innerHeight / HEIGHT);
+  app.view.style.width = `${Math.floor(WIDTH * scale)}px`;
+  app.view.style.height = `${Math.floor(HEIGHT * scale)}px`;
+};
+window.addEventListener('resize', fitCanvas);
 
 const updateInterval = 200;
 let elapsedSinceTick = 0;
@@ -327,6 +360,7 @@ loadAssets().then(() => {
 
   startScreen.on("startGame", () => {
     removeAndDestroyScreen(startScreen);
+    inputQueue.length = 0; // свайпы/нажатия на стартовом экране не должны рулить первой партией
     soundManager.playBackgroundMusic();
     const grassTexture = Texture.from("grass_64");
     const grassSprite = new TilingSprite(
@@ -345,7 +379,8 @@ loadAssets().then(() => {
       }
     });
   });
-  document.body.appendChild(app.view);
+  document.getElementById('game-container').appendChild(app.view);
+  fitCanvas();
 }).catch((error) => {
   console.error('Failed to load game assets', error);
   scoreContainer.innerHTML = 'Failed to load game assets — try reloading the page';
