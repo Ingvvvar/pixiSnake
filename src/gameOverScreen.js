@@ -50,7 +50,7 @@ class GameOverScreen extends Container {
 
   createRestartButton() {
     const button = Sprite.from("play_button");
-    button.interactive = true;
+    button.eventMode = 'static';
     button.cursor = 'pointer';
     button.anchor.set(0.5, 1);
     button.scale.set(0.3, 0.3);

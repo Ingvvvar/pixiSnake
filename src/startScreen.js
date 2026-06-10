@@ -20,7 +20,7 @@ export default class StartScreen extends Container {
     this.playButton.scale.set(0.5, 0.5);
     this.playButton.position.set(app.screen.width / 2, app.screen.height);
 
-    this.playButton.interactive = true;
+    this.playButton.eventMode = 'static';
     this.playButton.cursor = 'pointer';
 
     this.playButton.on("pointerdown", () => {

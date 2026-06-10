@@ -32,6 +32,6 @@
   },
   "dependencies": {
     "howler": "^2.2.3",
-    "pixi.js": "^7.1.4"
+    "pixi.js": "^7.4.3"
   }
 }
