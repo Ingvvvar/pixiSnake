@@ -5,22 +5,4 @@ Object.entries(appTextures).forEach(([key, value]) => {
   Assets.add({ alias: key, src: value });
 })
 
-const textures = new Map();
-
-export const loadAssets = (onProgress) => {
-  const keys = Object.entries(allTextureKeys).map(([key, value]) => value)
-  Assets.load([...keys], onProgress).then((data) => {
-    Object.entries(data).forEach(([key, value]) => {
-      textures.set(key, value);
-    })
-    onProgress('all');
-  })
-}
-
-export const getTexture = (id) => {
-  if (textures.has(id)) {
-    return textures.get(id);
-  }
-
-  return null;
-}
+export const loadAssets = () => Assets.load(Object.values(allTextureKeys));

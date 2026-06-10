@@ -27,7 +27,8 @@ function drawScore() {
 const app = new Application({
   height: HEIGHT,
   width: WIDTH,
-  antialias: true
+  // пиксель-арт, выровненный по сетке — сглаживание только тратит GPU
+  antialias: false
 });
 globalThis.__PIXI_APP__ = app;
 drawScore()
@@ -115,12 +116,16 @@ const randomPositionFood = () => {
 }
 randomPositionFood();
 const foodContainer = new Container();
+let appleSprite = null;
+
+// Один спрайт яблока на всю игру — при респауне еды он просто переезжает
 const drawFood = () => {
-  const apple = Sprite.from('apple');
-  apple.anchor.set(0.5, 0.5)
-  apple.position.set(food.x + FOOD_SIZE, food.y + FOOD_SIZE);
-  foodContainer.addChild(apple)
-  app.stage.addChild(foodContainer);
+  if (!appleSprite) {
+    appleSprite = Sprite.from('apple');
+    appleSprite.anchor.set(0.5, 0.5);
+    foodContainer.addChild(appleSprite);
+  }
+  appleSprite.position.set(food.x + FOOD_SIZE, food.y + FOOD_SIZE);
 }
 
 const snakeContainer = new Container();
@@ -145,17 +150,36 @@ const getDirection = (current, previous) => {
   if (dy > 0) return 'down';
 };
 
-const getSprite = (type, direction) => {
+const getTextureKey = (type, direction) => {
   if (!direction) {
     return null;
   }
   const key = `${type}_${direction}`;
-  // Sprite.from с неизвестным ключом уходит грузить его как URL (404 и пустой
+  // Texture.from с неизвестным ключом уходит грузить его как URL (404 и пустой
   // спрайт), поэтому ключ обязан существовать в атласе
   if (!allTextureKeys[key]) {
     return null;
   }
-  return Sprite.from(key);
+  return key;
+};
+
+// Спрайты сегментов переиспользуются: длина змейки меняется максимум на 1 за тик,
+// пересоздавать весь контейнер каждые 200 мс — лишняя работа для GC и WebGL
+const syncSnakeSprites = () => {
+  while (snakeContainer.children.length < snake.tails.length) {
+    const sprite = new Sprite();
+    sprite.anchor.set(0.5, 0.5);
+    snakeContainer.addChild(sprite);
+  }
+  while (snakeContainer.children.length > snake.tails.length) {
+    snakeContainer.removeChildAt(snakeContainer.children.length - 1).destroy();
+  }
+};
+
+const clearSnakeSprites = () => {
+  while (snakeContainer.children.length > 0) {
+    snakeContainer.removeChildAt(snakeContainer.children.length - 1).destroy();
+  }
 };
 
 const drawSnake = () => {
@@ -181,7 +205,6 @@ const drawSnake = () => {
     snake.maxTails++;
     incScore();
     soundManager.playEatSound();
-    foodContainer.removeChildren();
     randomPositionFood();
     drawFood();
   }
@@ -193,39 +216,40 @@ const drawSnake = () => {
     }
   }
 
+  syncSnakeSprites();
+
   snake.tails.forEach((el, idx) => {
-    let segmentSprite;
     const previous = idx === 0 ? null : snake.tails[idx - 1];
     const next = idx === snake.tails.length - 1 ? null : snake.tails[idx + 1];
-  
+
+    let textureKey;
     if (idx === 0) { // Head
       const direction = getDirection(el, next) || 'right';
-      segmentSprite = getSprite('snake_head', direction);
-      segmentSprite.zIndex = 1;
+      textureKey = getTextureKey('snake_head', direction);
     } else if (idx === snake.tails.length - 1) { // Tail
       const direction = getDirection(previous, el);
-      segmentSprite = getSprite('snake_tail', direction);
+      textureKey = getTextureKey('snake_tail', direction);
     } else { // Body
       const prevDirection = getDirection(el, next);
       const nextDirection = getDirection(previous, el);
-  
+
       if (prevDirection !== nextDirection) {
-        segmentSprite = getSprite('snake_body_bend', prevDirection + '_' + nextDirection)
-          || getSprite('snake_body', nextDirection || prevDirection);
+        textureKey = getTextureKey('snake_body_bend', prevDirection + '_' + nextDirection)
+          || getTextureKey('snake_body', nextDirection || prevDirection);
       } else {
-        segmentSprite = getSprite('snake_body', prevDirection);
+        textureKey = getTextureKey('snake_body', prevDirection);
       }
     }
-  
-    if (segmentSprite) {
-      segmentSprite.anchor.set(0.5, 0.5);
-      segmentSprite.position.set(el.x + CELL_SIZE / 2, el.y + CELL_SIZE / 2);
-      segmentSprite.width = CELL_SIZE;
-      segmentSprite.height = CELL_SIZE;
 
-      snakeContainer.addChild(segmentSprite);
-      app.stage.addChild(snakeContainer);
-    }
+    const sprite = snakeContainer.children[idx];
+    sprite.visible = Boolean(textureKey);
+    if (!textureKey) return;
+
+    sprite.texture = Texture.from(textureKey);
+    sprite.zIndex = idx === 0 ? 1 : 0;
+    sprite.position.set(el.x + CELL_SIZE / 2, el.y + CELL_SIZE / 2);
+    sprite.width = CELL_SIZE;
+    sprite.height = CELL_SIZE;
   });
 };
 
@@ -260,7 +284,7 @@ function gameOver() {
   soundManager.stopBackgroundMusic();
 
   gameOverTimeout = setTimeout(() => {
-    snakeContainer.removeChildren();
+    clearSnakeSprites();
     snake.tails = [];
 
     const gameOverScreen = new GameOverScreen(app, score);
@@ -280,9 +304,8 @@ function restartGame() {
   drawScore();
 
   resetSnake();
-  snakeContainer.removeChildren();
+  clearSnakeSprites();
 
-  foodContainer.removeChildren();
   randomPositionFood();
   drawFood();
   soundManager.playBackgroundMusic();
@@ -296,40 +319,34 @@ document.addEventListener("keydown", (e) => {
 })
 
 const updateInterval = 200;
-let lastUpdateTime = Date.now();
+let elapsedSinceTick = 0;
 
-loadAssets((progress) => {
-  console.log(progress)
-  if (progress === 'all') {
+loadAssets().then(() => {
+  const startScreen = new StartScreen(app, soundManager);
+  app.stage.addChild(startScreen);
 
-    const startScreen = new StartScreen(app, soundManager);
-    app.stage.addChild(startScreen);
+  startScreen.on("startGame", () => {
+    removeAndDestroyScreen(startScreen);
+    soundManager.playBackgroundMusic();
+    const grassTexture = Texture.from("grass_64");
+    const grassSprite = new TilingSprite(
+      grassTexture,
+      app.screen.width,
+      app.screen.height
+    )
+    app.stage.addChild(grassSprite, foodContainer, snakeContainer);
+    drawFood();
 
-    startScreen.on("startGame", () => {
-      removeAndDestroyScreen(startScreen);
-      soundManager.playBackgroundMusic();
-      const grassTexture = Texture.from("grass_64");
-      const grassSprite = new TilingSprite(
-        grassTexture,
-        app.screen.width,
-        app.screen.height
-      )
-      app.stage.addChild(grassSprite);
-      drawFood();
-
-      app.ticker.add(() => {
-        const now = Date.now();
-        const deltaTime = now - lastUpdateTime;
-
-        if (deltaTime > updateInterval) {
-          if (!snake.gameOver) {
-            snakeContainer.removeChildren();
-            drawSnake();
-          }
-          lastUpdateTime = now - (deltaTime % updateInterval);
-        }
-      });
+    app.ticker.add(() => {
+      elapsedSinceTick += app.ticker.deltaMS;
+      if (elapsedSinceTick >= updateInterval) {
+        elapsedSinceTick %= updateInterval;
+        drawSnake();
+      }
     });
-    document.body.appendChild(app.view);
-  }
+  });
+  document.body.appendChild(app.view);
+}).catch((error) => {
+  console.error('Failed to load game assets', error);
+  scoreContainer.innerHTML = 'Failed to load game assets — try reloading the page';
 })
