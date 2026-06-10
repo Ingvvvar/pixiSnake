@@ -30,7 +30,9 @@ const app = new Application({
   // пиксель-арт, выровненный по сетке — сглаживание только тратит GPU
   antialias: false
 });
-globalThis.__PIXI_APP__ = app;
+if (process.env.NODE_ENV !== 'production') {
+  globalThis.__PIXI_APP__ = app; // для Pixi DevTools и автотестов
+}
 drawScore()
 
 const DIRECTIONS = {
@@ -47,7 +49,7 @@ const KEY_TO_DIRECTION = {
   ArrowRight: 'right',
 };
 
-const MAX_QUEUED_INPUTS = 3;
+const MAX_QUEUED_INPUTS = appConstants.game.MAX_QUEUED_INPUTS;
 const inputQueue = [];
 
 const queueDirection = (direction) => {
@@ -294,7 +296,7 @@ function gameOver() {
       removeAndDestroyScreen(gameOverScreen);
       restartGame();
     });
-  }, 3000);
+  }, appConstants.game.GAME_OVER_DELAY_MS);
 }
 
 function restartGame() {
@@ -321,7 +323,7 @@ document.addEventListener("keydown", (e) => {
 
 // Свайп: доминирующая ось вектора pointerdown→pointerup задаёт направление.
 // Движения короче порога — это тапы (кнопки Play обрабатывает сам Pixi)
-const SWIPE_THRESHOLD_PX = 24;
+const SWIPE_THRESHOLD_PX = appConstants.game.SWIPE_THRESHOLD_PX;
 let swipeStart = null;
 
 app.view.addEventListener('pointerdown', (e) => {
@@ -351,7 +353,7 @@ const fitCanvas = () => {
 };
 window.addEventListener('resize', fitCanvas);
 
-const updateInterval = 200;
+const updateInterval = appConstants.game.TICK_MS;
 let elapsedSinceTick = 0;
 
 loadAssets().then(() => {

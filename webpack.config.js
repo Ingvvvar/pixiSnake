@@ -19,12 +19,14 @@ module.exports = {
       ],
     }),
   ],
-  devtool: isProduction ? 'source-map' : 'inline-source-map',
+  // в прод-выдачу source map не попадает (1.5MB лишнего веса на хостинге)
+  devtool: isProduction ? false : 'inline-source-map',
   devServer: {
     static: './dist',
   },
   output: {
-    filename: 'main.js',
+    // contenthash инвалидирует кэш браузера/CDN при каждом изменении кода
+    filename: isProduction ? '[name].[contenthash:8].js' : 'main.js',
     path: path.resolve(__dirname, 'dist'),
     publicPath: isProduction ? './' : '',
     clean: true,

@@ -1,13 +1,13 @@
 {
   "name": "pixisnake",
   "version": "1.0.0",
-  "description": "[pixiSnake DEMO LINK](https://ingvvvar.github.io/pixiSnake/)",
+  "description": "Classic snake game built with Pixi.js — keyboard and swipe controls, desktop and mobile",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "webpack --watch",
     "start": "webpack serve --open",
-    "build": "cross-env NODE_ENV=production webpack"
+    "build": "cross-env NODE_ENV=production webpack",
+    "deploy": "npm run build && gh-pages -d dist"
   },
   "repository": {
     "type": "git",
@@ -24,6 +24,7 @@
     "copy-webpack-plugin": "^11.0.0",
     "cross-env": "^7.0.3",
     "css-loader": "^6.7.3",
+    "gh-pages": "^6.3.0",
     "html-webpack-plugin": "^5.5.0",
     "style-loader": "^3.3.1",
     "webpack": "^5.75.0",

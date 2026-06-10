@@ -1,4 +1,5 @@
 import { Container, Sprite, Text, TextStyle } from "pixi.js";
+import appConstants from './constants';
 
 class GameOverScreen extends Container {
   constructor(app, score) {
@@ -53,8 +54,9 @@ class GameOverScreen extends Container {
     button.eventMode = 'static';
     button.cursor = 'pointer';
     button.anchor.set(0.5, 1);
-    button.scale.set(0.3, 0.3);
-    button.position.set(this.app.screen.width / 2, 470);
+    button.scale.set(appConstants.ui.RESTART_BUTTON_SCALE);
+    // под текстами счёта (h/2), с тем же визуальным положением, что и раньше (y=470)
+    button.position.set(this.app.screen.width / 2, this.app.screen.height / 2 + 150);
     button.on("pointerdown", () => this.emit("restartGame"));
     this.addChild(button);
   }

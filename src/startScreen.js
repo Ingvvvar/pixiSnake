@@ -1,4 +1,5 @@
 import { Container, Sprite, Texture } from "pixi.js";
+import appConstants from './constants';
 
 export default class StartScreen extends Container {
   constructor(app, soundManager) {
@@ -17,7 +18,7 @@ export default class StartScreen extends Container {
     this.background.height = app.screen.height;
 
     this.playButton.anchor.set(0.5, 1);
-    this.playButton.scale.set(0.5, 0.5);
+    this.playButton.scale.set(appConstants.ui.PLAY_BUTTON_SCALE);
     this.playButton.position.set(app.screen.width / 2, app.screen.height);
 
     this.playButton.eventMode = 'static';

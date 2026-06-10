@@ -1,21 +1,24 @@
-import { Howl, Howler } from 'howler';
+import { Howl } from 'howler';
+import appConstants from './constants';
 
 export default class SoundManager {
   constructor() {
     this.backgroundMusic = new Howl({
-      src: ['sounds/taratata.mp3'],
+      src: ['sounds/taratata.m4a'],
       loop: true,
-      volume: 0.2,
+      volume: appConstants.sound.MUSIC_VOLUME,
     });
 
+    // ogg + m4a: Howler берёт первый формат, который умеет браузер
+    // (Safari не воспроизводит ogg)
     this.eatSound = new Howl({
-      src: ['sounds/eatSound.ogg'],
-      volume: 0.7,
+      src: ['sounds/eatSound.ogg', 'sounds/eatSound.m4a'],
+      volume: appConstants.sound.EFFECT_VOLUME,
     });
 
     this.dieSound = new Howl({
-      src: ['sounds/dieSound.ogg'],
-      volume: 0.7,
+      src: ['sounds/dieSound.ogg', 'sounds/dieSound.m4a'],
+      volume: appConstants.sound.EFFECT_VOLUME,
     });
   }
 

@@ -50,8 +50,8 @@ const appTextures = {
   [allTextureKeys.snake_tail_left]: 'assets/snake_tail_left.png',
   [allTextureKeys.snake_tail_right]: 'assets/snake_tail_right.png',
   [allTextureKeys.snake_tail_up]: 'assets/snake_tail_up.png',
-  [allTextureKeys.start_screen_bg]: 'assets/start_screen_bg.png',
-  [allTextureKeys.end_screen_bg]: 'assets/end_screen_bg.png',
+  [allTextureKeys.start_screen_bg]: 'assets/start_screen_bg.jpg',
+  [allTextureKeys.end_screen_bg]: 'assets/end_screen_bg.jpg',
 };
 
 export default appTextures;
