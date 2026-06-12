@@ -48,6 +48,58 @@
         pointer-events: none;
         z-index: 1;
       }
+      #name-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(16, 21, 16, 0.85);
+        z-index: 3;
+      }
+      #name-overlay form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 24px 32px;
+        background: #101510;
+        border: 2px solid #4caf50;
+        border-radius: 8px;
+      }
+      #name-overlay .name-title {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 18px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        color: #7ddc7d;
+      }
+      #name-overlay input {
+        width: 200px;
+        padding: 8px 10px;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 16px;
+        color: #ffffff;
+        background: #1a241a;
+        border: 1px solid #4caf50;
+        border-radius: 4px;
+        outline: none;
+        text-align: center;
+      }
+      #name-overlay button {
+        padding: 8px 28px;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 16px;
+        font-weight: bold;
+        color: #101510;
+        background: #4caf50;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #name-overlay button:hover {
+        background: #66bb6a;
+      }
       #rotate-hint {
         display: none;
         position: fixed;

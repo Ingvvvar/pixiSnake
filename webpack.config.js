@@ -23,6 +23,8 @@ module.exports = {
   devtool: isProduction ? false : 'inline-source-map',
   devServer: {
     static: './dist',
+    // фронт ходит на относительные /api/..., в деве их обслуживает server/ на 3000
+    proxy: { '/api': 'http://127.0.0.1:3000' },
   },
   output: {
     // contenthash инвалидирует кэш браузера/CDN при каждом изменении кода

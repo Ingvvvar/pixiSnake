@@ -5,6 +5,8 @@ import { allTextureKeys } from './textures';
 import SoundManager from './soundManager';
 import StartScreen from './startScreen';
 import GameOverScreen from './gameOverScreen';
+import { getSavedPlayerName, savePlayerName, postScore, fetchLeaderboard } from './leaderboardApi';
+import { askPlayerName } from './namePrompt';
 
 const WIDTH = appConstants.size.WIDTH;
 const HEIGHT = appConstants.size.HEIGHT;
@@ -280,6 +282,18 @@ const removeAndDestroyScreen = (screen) => {
   setTimeout(() => screen.destroy({ children: true }), 0);
 };
 
+// Имя спрашивается один раз и запоминается; отправка и загрузка таблицы —
+// best effort: при лежащем бэкенде вернётся null и экран останется как обычно
+async function reportScoreAndGetTop(finalScore) {
+  let name = getSavedPlayerName();
+  if (!name) {
+    name = await askPlayerName();
+    savePlayerName(name);
+  }
+  await postScore(name, finalScore);
+  return fetchLeaderboard();
+}
+
 function gameOver() {
   snake.gameOver = true;
   soundManager.playDieSound();
@@ -295,6 +309,12 @@ function gameOver() {
     gameOverScreen.on("restartGame", () => {
       removeAndDestroyScreen(gameOverScreen);
       restartGame();
+    });
+
+    // Ответ может прийти после рестарта — экран к тому моменту уничтожен,
+    // showLeaderboard сам это проверяет
+    reportScoreAndGetTop(score).then((entries) => {
+      gameOverScreen.showLeaderboard(entries);
     });
   }, appConstants.game.GAME_OVER_DELAY_MS);
 }
@@ -314,6 +334,7 @@ function restartGame() {
 }
 
 document.addEventListener("keydown", (e) => {
+  if (e.target instanceof HTMLInputElement) return; // стрелки в поле имени двигают курсор, а не змейку
   const direction = KEY_TO_DIRECTION[e.code];
   if (direction) {
     e.preventDefault(); // стрелки не должны скроллить страницу
