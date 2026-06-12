@@ -5,7 +5,9 @@ const { Pool } = require('pg');
 const app = express();
 app.use(express.json());
 
-const HOST = '127.0.0.1';
+// По умолчанию только loopback (хост-версия под PM2); в контейнере компоуз
+// задаёт HOST=0.0.0.0, иначе проброшенный порт не достучится до процесса
+const HOST = process.env.HOST || '127.0.0.1';
 const PORT = 3000;
 const MAX_NAME_LENGTH = 20;
 const MAX_SCORE = 1_000_000;
