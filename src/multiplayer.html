@@ -19,76 +19,110 @@
         background: #101510;
         overflow: hidden;
         overscroll-behavior: none;
+        font-family: Arial, Helvetica, sans-serif;
       }
+      /* Поле и панель счёта не пересекаются: панель — сбоку (ландшафт/десктоп)
+         или сверху (портрет/мобила), поле всегда видно целиком. */
       body {
+        display: flex;
+        flex-direction: row;
+        height: 100vh;
+        width: 100vw;
+      }
+      #panel {
+        flex: 0 0 200px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px;
+        background: #0c0f0c;
+        overflow: auto;
+      }
+      #stage {
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 0;
+        position: relative;
+        overflow: hidden;
+      }
+      /* заполняет всё поле-область, центрует canvas */
+      #game-container {
+        position: absolute;
+        inset: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-family: Arial, Helvetica, sans-serif;
-      }
-      #game-container {
-        position: relative;
       }
       #game-container canvas {
         display: block;
-        touch-action: none;
+        touch-action: none; /* иначе браузер перехватит свайпы под скролл/зум */
       }
-      /* Таблица игроков — справа сверху, в стиле лидерборда одиночной игры */
+
+      /* кнопка выхода и счёт */
+      .btn {
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: bold;
+        color: #101510;
+        background: #4caf50;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        cursor: pointer;
+      }
+      .btn:hover { background: #66bb6a; }
+
+      #exit-btn { align-self: stretch; text-align: center; }
+
       #scoreboard {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        min-width: 180px;
-        padding: 12px 14px;
-        background: rgba(16, 21, 16, 0.85);
-        border: 2px solid #4caf50;
-        border-radius: 8px;
-        color: #ffffff;
-        font-size: 14px;
-        pointer-events: none;
-        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
       }
       #scoreboard .sb-title {
         font-size: 15px;
         font-weight: bold;
         letter-spacing: 2px;
         color: #7ddc7d;
-        text-align: center;
-        margin-bottom: 8px;
       }
-      #scoreboard .sb-row {
+      .sb-row {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 2px 0;
+        gap: 6px;
+        color: #ffffff;
+        font-size: 14px;
         white-space: nowrap;
       }
-      #scoreboard .sb-row.me {
-        font-weight: bold;
-      }
-      #scoreboard .sb-row.dead {
-        opacity: 0.45;
-      }
-      #scoreboard .sb-swatch {
+      .sb-row.me { font-weight: bold; }
+      .sb-row.dead { opacity: 0.45; }
+      .sb-swatch {
         width: 12px;
         height: 12px;
         border-radius: 3px;
         flex: 0 0 auto;
       }
-      #scoreboard .sb-name {
+      .sb-name {
         flex: 1 1 auto;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 130px;
+        max-width: 120px;
       }
-      #scoreboard .sb-score {
+      .sb-score {
         flex: 0 0 auto;
         font-variant-numeric: tabular-nums;
       }
-      /* Сообщения о подключении / гибели */
+      #controls-hint {
+        margin-top: auto;
+        font-size: 12px;
+        color: #ffffff;
+        opacity: 0.6;
+      }
+
+      /* сообщения о подключении — поверх поля */
       #status {
         position: absolute;
-        top: 16px;
+        top: 12px;
         left: 0;
         right: 0;
         text-align: center;
@@ -97,25 +131,42 @@
         color: #ffffff;
         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
         pointer-events: none;
-        z-index: 2;
+        z-index: 4;
       }
-      #hint {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 12px;
+
+      /* экран Game Over выбывшего игрока — поверх поля, остальных не трогает */
+      #gameover-overlay {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(16, 21, 16, 0.88);
+        z-index: 5;
+      }
+      #gameover-overlay.show { display: flex; }
+      #gameover-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 28px 36px;
+        background: #101510;
+        border: 2px solid #4caf50;
+        border-radius: 8px;
         text-align: center;
-        font-size: 13px;
+      }
+      #gameover-panel .go-title {
+        font-size: 30px;
+        font-weight: bold;
         color: #ffffff;
-        opacity: 0.7;
-        pointer-events: none;
-        z-index: 2;
       }
-      #hint a {
+      #gameover-panel .go-score {
+        font-size: 18px;
         color: #7ddc7d;
-        pointer-events: auto;
       }
-      /* Оверлей ввода имени — те же стили, что в одиночной игре (askPlayerName) */
+
+      /* оверлей ввода имени — те же стили, что в одиночной игре (askPlayerName) */
       #name-overlay {
         position: absolute;
         inset: 0;
@@ -123,7 +174,7 @@
         align-items: center;
         justify-content: center;
         background: rgba(16, 21, 16, 0.85);
-        z-index: 3;
+        z-index: 6;
       }
       #name-overlay form {
         display: flex;
@@ -162,16 +213,45 @@
         border-radius: 4px;
         cursor: pointer;
       }
-      #name-overlay button:hover {
-        background: #66bb6a;
+      #name-overlay button:hover { background: #66bb6a; }
+
+      /* портрет/мобила: панель уезжает наверх горизонтальной полосой */
+      @media (orientation: portrait) {
+        body { flex-direction: column; }
+        #panel {
+          flex: 0 0 auto;
+          width: 100%;
+          flex-direction: row;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 8px 16px;
+        }
+        #exit-btn { align-self: auto; }
+        #scoreboard {
+          flex-direction: row;
+          flex-wrap: wrap;
+          gap: 4px 14px;
+        }
+        #controls-hint { margin-top: 0; width: 100%; }
       }
     </style>
 </head>
 <body>
-    <div id="game-container">
+    <div id="panel">
+        <button id="exit-btn" class="btn" type="button">← Exit</button>
         <div id="scoreboard"></div>
-        <div id="status"></div>
+        <div id="controls-hint">Arrows or WASD to steer</div>
     </div>
-    <div id="hint">Arrows or WASD to steer · <a href="index.html">Single player</a></div>
+    <div id="stage">
+        <div id="game-container"></div>
+        <div id="status"></div>
+        <div id="gameover-overlay">
+            <div id="gameover-panel">
+                <div class="go-title">Game Over</div>
+                <div class="go-score">Your score: <span id="go-score-val">0</span></div>
+                <button id="play-again-btn" class="btn" type="button">Play again</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

@@ -61,6 +61,8 @@ wss.on('connection', (ws) => {
       send(ws, { type: 'joined', id: player.id, color: player.color });
     } else if (msg.type === 'dir') {
       if (ws.playerId) game.setDirection(ws.playerId, msg.dir);
+    } else if (msg.type === 'respawn') {
+      if (ws.playerId) game.requestRespawn(ws.playerId);
     }
   });
 

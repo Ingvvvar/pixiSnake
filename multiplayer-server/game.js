@@ -8,8 +8,6 @@
 const COLS = 30;
 const ROWS = 30;
 const INITIAL_LENGTH = 3;
-// Респаун выбывшего через ~2 c (16 тиков при 8 тиках/c)
-const RESPAWN_TICKS = 16;
 // Минимум еды на поле; реально держим max(MIN_FOOD, число игроков)
 const MIN_FOOD = 3;
 
@@ -62,10 +60,10 @@ class Game {
       pendingDir: null,
       alive: false,
       score: 0,
-      respawnAt: 0,
+      wantsRespawn: false,
     };
     this.players.set(id, player);
-    this.spawn(player);
+    if (!this.spawn(player)) player.wantsRespawn = true; // поле занято — заспауним позже
     return player;
   }
 
@@ -76,6 +74,14 @@ class Game {
   setName(id, name) {
     const player = this.players.get(id);
     if (player) player.name = sanitizeName(name);
+  }
+
+  // Игрок нажал «Играть снова» на экране Game Over — спауним заново (счёт с нуля).
+  // Авто-респауна нет: выбывший остаётся в комнате, пока сам не перезапустится.
+  requestRespawn(id) {
+    const player = this.players.get(id);
+    if (!player || player.alive) return;
+    if (!this.spawn(player)) player.wantsRespawn = true;
   }
 
   // Клиент шлёт направление; применяется не сразу, а на ближайшем тике —
@@ -138,28 +144,25 @@ class Game {
           player.dir = d;
           player.pendingDir = null;
           player.alive = true;
-          player.respawnAt = 0;
+          player.score = 0; // новая жизнь начинается с нуля
           return true;
         }
       }
     }
 
-    // поле забито — попробуем заспаунить на следующем тике
-    player.alive = false;
-    player.snake = [];
-    player.respawnAt = this.tick + RESPAWN_TICKS;
+    // места не нашлось (поле забито) — спаун повторится на следующем тике
     return false;
   }
 
-  // Смерть: тело убирается с поля, счёт обнуляется (каждая жизнь — заново,
-  // как рестарт в одиночной игре), назначается отложенный респаун
+  // Смерть: тело убирается с поля, игрок остаётся в комнате выбывшим. Авто-
+  // респауна нет — ждём явного «Играть снова». Счёт НЕ обнуляем: он нужен для
+  // экрана Game Over и таблицы; сбросится при следующем спауне.
   kill(player) {
     player.alive = false;
     player.snake = [];
     player.dir = null;
     player.pendingDir = null;
-    player.score = 0;
-    player.respawnAt = this.tick + RESPAWN_TICKS;
+    player.wantsRespawn = false;
   }
 
   randomFreeCell() {
@@ -188,9 +191,11 @@ class Game {
   step() {
     this.tick++;
 
+    // отложенный спаун: тем, кому при join/«Играть снова» не хватило места
+    // (поле было забито) — пробуем снова на каждом тике
     for (const player of this.players.values()) {
-      if (!player.alive && player.respawnAt && this.tick >= player.respawnAt) {
-        this.spawn(player);
+      if (!player.alive && player.wantsRespawn && this.spawn(player)) {
+        player.wantsRespawn = false;
       }
     }
 

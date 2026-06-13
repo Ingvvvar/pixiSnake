@@ -17,6 +17,11 @@ const soundManager = new SoundManager();
 
 const statusEl = document.getElementById('status');
 const scoreboardEl = document.getElementById('scoreboard');
+const stageEl = document.getElementById('stage');
+const gameoverOverlay = document.getElementById('gameover-overlay');
+const goScoreVal = document.getElementById('go-score-val');
+const playAgainBtn = document.getElementById('play-again-btn');
+const exitBtn = document.getElementById('exit-btn');
 
 let playerName = getSavedPlayerName() || '';
 
@@ -43,16 +48,8 @@ const playerViews = new Map(); // id -> { container, segLayer, segs:[Sprite], ma
 const cellCenter = (x, y) => ({ x: x * CELL + CELL / 2, y: y * CELL + CELL / 2 });
 
 const renderStatus = () => {
-  if (!connected) {
-    statusEl.textContent = 'Reconnecting…';
-    return;
-  }
-  const me = myId && app ? findMe() : null;
-  if (me && !me.alive) {
-    statusEl.textContent = 'You crashed — respawning…';
-    return;
-  }
-  statusEl.textContent = '';
+  // только статус подключения; гибель теперь показывает оверлей Game Over
+  statusEl.textContent = connected ? '' : 'Reconnecting…';
 };
 
 let latestPlayers = [];
@@ -94,11 +91,14 @@ function buildWorld(serverGrid) {
 // canvas с сохранением пропорций (как в одиночной игре)
 function fitCanvas() {
   if (!app || !grid) return;
-  const width = grid.cols * CELL;
-  const height = grid.rows * CELL;
-  const scale = Math.min(window.innerWidth / width, window.innerHeight / height, 1);
-  app.view.style.width = `${Math.floor(width * scale)}px`;
-  app.view.style.height = `${Math.floor(height * scale)}px`;
+  const fieldW = grid.cols * CELL;
+  const fieldH = grid.rows * CELL;
+  // вписываем поле в доступную область сцены (#stage), не залезая на панель счёта
+  const availW = stageEl.clientWidth || window.innerWidth;
+  const availH = stageEl.clientHeight || window.innerHeight;
+  const scale = Math.min(availW / fieldW, availH / fieldH, 1);
+  app.view.style.width = `${Math.floor(fieldW * scale)}px`;
+  app.view.style.height = `${Math.floor(fieldH * scale)}px`;
 }
 window.addEventListener('resize', fitCanvas);
 
@@ -207,8 +207,16 @@ function updateFood(food) {
   });
 }
 
+let lastScoreboardSig = '';
+let lastRowCount = -1;
 function updateScoreboard(players) {
   const sorted = players.slice().sort((a, b) => b.score - a.score);
+  const sig = sorted
+    .map((p) => `${p.id}:${p.name}:${p.score}:${p.alive ? 1 : 0}:${p.id === myId ? 1 : 0}`)
+    .join('|');
+  if (sig === lastScoreboardSig) return; // ничего не изменилось — не трогаем DOM
+  lastScoreboardSig = sig;
+
   const rows = sorted.map((p) => {
     const cls = ['sb-row'];
     if (p.id === myId) cls.push('me');
@@ -221,19 +229,44 @@ function updateScoreboard(players) {
       + `</div>`;
   }).join('');
   scoreboardEl.innerHTML = `<div class="sb-title">PLAYERS</div>${rows || '<div class="sb-row">waiting…</div>'}`;
+
+  // в портрете число игроков меняет высоту верхней панели → переразложить поле
+  if (sorted.length !== lastRowCount) {
+    lastRowCount = sorted.length;
+    fitCanvas();
+  }
 }
 
 const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
 ));
 
-// Звуки локального игрока: яблоко — на росте счёта, гибель — на переходе жив→мёртв
-function playLocalSounds(me) {
+// Локальные переходы: звук яблока на росте счёта, экран Game Over при гибели,
+// его скрытие при (пере)спауне. Счёт смерти берём из состояния — сервер хранит
+// его до респауна, поэтому у выбывшего me.score = финальный счёт.
+function handleLocalTransitions(me) {
   if (!me) return;
+  const justDied = prevAlive && !me.alive;
+  const justSpawned = !prevAlive && me.alive;
+
   if (me.alive && me.score > prevScore) soundManager.playEatSound();
-  if (prevAlive && !me.alive) soundManager.playDieSound();
-  prevScore = me.alive ? me.score : 0;
+  if (justDied) {
+    soundManager.playDieSound();
+    showGameOver(me.score);
+  }
+  if (justSpawned) hideGameOver();
+
+  prevScore = me.alive ? me.score : prevScore;
   prevAlive = me.alive;
+}
+
+function showGameOver(score) {
+  goScoreVal.textContent = score;
+  gameoverOverlay.classList.add('show');
+}
+
+function hideGameOver() {
+  gameoverOverlay.classList.remove('show');
 }
 
 function renderState(state) {
@@ -256,7 +289,7 @@ function renderState(state) {
 
   updateFood(state.food);
   updateScoreboard(state.players);
-  playLocalSounds(findMe());
+  handleLocalTransitions(findMe());
   renderStatus();
 }
 
@@ -313,6 +346,10 @@ function connect() {
     reconnectDelay = 1000;
     myId = null; // при переподключении сервер выдаст новый id
     lastSentDir = null;
+    // переподключение = новая сессия: сбрасываем экран Game Over и трекинг жизни
+    prevAlive = false;
+    prevScore = 0;
+    hideGameOver();
     sendJoin();
     renderStatus();
   };
@@ -355,6 +392,25 @@ document.addEventListener('keydown', (e) => {
   if (dir === lastSentDir) return; // не спамим одинаковыми (autorepeat клавиши)
   lastSentDir = dir;
   sendDir(dir);
+});
+
+// «Играть снова» на экране Game Over — просим сервер заспаунить заново.
+// Оверлей не прячем здесь: он скроется, когда сервер пришлёт нас живыми.
+playAgainBtn.addEventListener('click', () => {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'respawn' }));
+});
+
+// «Выход» — на главную страницу; реконнект глушим, чтобы не дёргался при уходе
+exitBtn.addEventListener('click', () => {
+  manualClose = true;
+  if (ws) {
+    try {
+      ws.close();
+    } catch {
+      // всё равно уходим
+    }
+  }
+  window.location.href = 'index.html';
 });
 
 window.addEventListener('beforeunload', () => {
