@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= htmlWebpackPlugin.options.title %></title>
+    <meta name="description" content="pixiSnake multiplayer — a shared-arena snake battle built with Pixi.js.">
+    <meta name="theme-color" content="#101510">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="pixiSnake — Multiplayer">
+    <meta property="og:description" content="A shared-arena multiplayer snake battle built with Pixi.js.">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #101510;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      #game-container {
+        position: relative;
+      }
+      #game-container canvas {
+        display: block;
+        touch-action: none;
+      }
+      /* Таблица игроков — справа сверху, в стиле лидерборда одиночной игры */
+      #scoreboard {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        min-width: 180px;
+        padding: 12px 14px;
+        background: rgba(16, 21, 16, 0.85);
+        border: 2px solid #4caf50;
+        border-radius: 8px;
+        color: #ffffff;
+        font-size: 14px;
+        pointer-events: none;
+        z-index: 2;
+      }
+      #scoreboard .sb-title {
+        font-size: 15px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        color: #7ddc7d;
+        text-align: center;
+        margin-bottom: 8px;
+      }
+      #scoreboard .sb-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 2px 0;
+        white-space: nowrap;
+      }
+      #scoreboard .sb-row.me {
+        font-weight: bold;
+      }
+      #scoreboard .sb-row.dead {
+        opacity: 0.45;
+      }
+      #scoreboard .sb-swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        flex: 0 0 auto;
+      }
+      #scoreboard .sb-name {
+        flex: 1 1 auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 130px;
+      }
+      #scoreboard .sb-score {
+        flex: 0 0 auto;
+        font-variant-numeric: tabular-nums;
+      }
+      /* Сообщения о подключении / гибели */
+      #status {
+        position: absolute;
+        top: 16px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: clamp(16px, 4vmin, 24px);
+        font-weight: bold;
+        color: #ffffff;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        pointer-events: none;
+        z-index: 2;
+      }
+      #hint {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 12px;
+        text-align: center;
+        font-size: 13px;
+        color: #ffffff;
+        opacity: 0.7;
+        pointer-events: none;
+        z-index: 2;
+      }
+      #hint a {
+        color: #7ddc7d;
+        pointer-events: auto;
+      }
+      /* Оверлей ввода имени — те же стили, что в одиночной игре (askPlayerName) */
+      #name-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(16, 21, 16, 0.85);
+        z-index: 3;
+      }
+      #name-overlay form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 24px 32px;
+        background: #101510;
+        border: 2px solid #4caf50;
+        border-radius: 8px;
+      }
+      #name-overlay .name-title {
+        font-size: 18px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        color: #7ddc7d;
+      }
+      #name-overlay input {
+        width: 200px;
+        padding: 8px 10px;
+        font-size: 16px;
+        color: #ffffff;
+        background: #1a241a;
+        border: 1px solid #4caf50;
+        border-radius: 4px;
+        outline: none;
+        text-align: center;
+      }
+      #name-overlay button {
+        padding: 8px 28px;
+        font-size: 16px;
+        font-weight: bold;
+        color: #101510;
+        background: #4caf50;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #name-overlay button:hover {
+        background: #66bb6a;
+      }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="scoreboard"></div>
+        <div id="status"></div>
+    </div>
+    <div id="hint">Arrows or WASD to steer · <a href="index.html">Single player</a></div>
+</body>
+</html>

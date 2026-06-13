@@ -1,0 +1,13 @@
+{
+  "name": "pixisnake-multiplayer-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Authoritative multiplayer snake server for pixiSnake (WebSocket, in-memory)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
